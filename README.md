@@ -46,7 +46,7 @@
 
 > 这一节往下都是给 AI 看的操作手册。自己不想折腾就把仓库地址交给 AI，让它照着做。
 
-这台机器只有 Command Line Tools（没有 Xcode），所以 `.app` 由脚本手工组装：
+不依赖 Xcode，SwiftPM + 脚本就能打包 —— 有 Command Line Tools 即可，`.app` 由脚本手工组装：
 
 ```bash
 ./Scripts/make_app.sh
