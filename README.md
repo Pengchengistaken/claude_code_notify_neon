@@ -2,6 +2,15 @@
 
 环绕屏幕的霓虹跑马灯，同时也是 Claude Code 的交通灯。
 
+> **不用自己动手装。** 这份 README 是写给 AI 看的 —— 把下面这个地址丢给你的 AI
+> （Claude Code、Cursor、Codex 都行），让它帮你编译出 app 就行：
+>
+> ```
+> https://github.com/Pengchengistaken/claude_code_notify_neon
+> ```
+>
+> 后面的构建、安装、接 hooks 的步骤它自己会看懂，你只要在它问你要权限的时候点同意。
+
 平时它就是一条不停流动的彩色灯带；开启 Claude Code 通知后，整条灯带变成状态指示：
 
 | 灯色 | 含义 | 触发时机 |
@@ -11,10 +20,31 @@
 | 🟢 绿 | 运行完成 | 本轮回答结束（撒花 + 提示音 + 系统通知） |
 | ⚪️ 灭 | 空闲 | 无活动，回到默认彩虹配色 |
 
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/idle.png" alt="空闲：灯带走彩虹配色"></td>
+<td width="50%"><img src="docs/screenshots/running.png" alt="正在运行：整条灯带转成黄色"></td>
+</tr>
+<tr>
+<td><b>⚪️ 空闲</b> —— 没有会话在跑，灯带走默认彩虹配色</td>
+<td><b>🟡 正在运行</b> —— 提交提问、工具调用前后都是黄灯</td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/waiting.png" alt="等待确认：灯带转红并弹出通知"></td>
+<td><img src="docs/screenshots/finished.png" alt="运行完成：灯带转绿并撒花"></td>
+</tr>
+<tr>
+<td><b>🔴 等待确认</b> —— 权限询问，红灯 + 提示音 + 通知横幅</td>
+<td><b>🟢 运行完成</b> —— 绿灯 + 撒花 + 提示音 + 通知横幅</td>
+</tr>
+</table>
+
 通知走 `UNUserNotificationCenter`，横幅上显示的是 NeonNotify 自己的名字和图标，
 不会像默认的 `osascript` 方案那样冒充 "Script Editor"。
 
 ## 构建
+
+> 这一节往下都是给 AI 看的操作手册。自己不想折腾就把仓库地址交给 AI，让它照着做。
 
 这台机器只有 Command Line Tools（没有 Xcode），所以 `.app` 由脚本手工组装：
 
