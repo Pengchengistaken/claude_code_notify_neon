@@ -111,11 +111,16 @@ each color without running a real Claude turn.
 ### Flow style: the Claude Code stream
 
 Besides the default marquee (a white highlight chasing around the loop), the strip can run the
-same flowing light Claude Code shows along the top of your terminal while it works. The shape was
-measured off that line frame by frame: the color never changes, only brightness — a gap dimmed all
-the way to black sweeps along, with a ~680pt linear ramp on each side, moving at ~1140pt/s (it
-crosses a screen-width in about 1.5s). Here it circles the whole strip, so your own colors — the
-idle rainbow, or the yellow/red/green traffic light — are kept exactly as they are.
+same flowing light Claude Code shows along the top of your terminal while it works: a gap dimmed
+all the way to black travels around the loop at ~1140pt/s. It only dims the strip by alpha rather
+than laying white on top, so your own colors — the idle rainbow, or the yellow/red/green traffic
+light — are kept exactly as they are.
+
+The gap follows the border's true arc length (`trim`), so its speed and width are identical on all
+four edges and through the corners. Its shape is a little harder-edged than the one in the
+terminal: the original ramps off over ~680pt on each side, while this is a 520pt solid core with
+60pt of softening — ramps that wide would leave the gap covering nearly a third of the loop, which
+looked worse in practice.
 
 ## Layout
 
