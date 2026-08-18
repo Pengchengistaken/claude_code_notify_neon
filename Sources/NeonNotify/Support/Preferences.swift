@@ -43,6 +43,23 @@ enum StripLevel: String, CaseIterable, Identifiable {
     }
 }
 
+/// 灯带的流动样式
+enum MarqueeStyle: String, CaseIterable, Identifiable {
+    /// 一段白色亮弧绕圈跑
+    case sweep
+    /// Claude Code 终端顶部那条绿色流水：一个渐暗的缺口匀速扫过，颜色不变
+    case stream
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .sweep: return "跑马灯"
+        case .stream: return "流水（Claude Code）"
+        }
+    }
+}
+
 /// 跑马灯流动方向
 enum FlowDirection: String, CaseIterable, Identifiable {
     case clockwise
@@ -105,8 +122,11 @@ final class Preferences: ObservableObject {
     @Published var cornerRadius: Double = 28 { didSet { save(oldValue != cornerRadius) } }
     @Published var glow: Double = 1.4 { didSet { save(oldValue != glow) } }
     @Published var speed: Double = 1.0 { didSet { save(oldValue != speed) } }
+    @Published var marqueeStyle: MarqueeStyle = .sweep { didSet { save(oldValue != marqueeStyle) } }
     // 白色高光叠太多会把彩虹冲成白色，默认只留一点流动感
     @Published var marqueeIntensity: Double = 0.25 { didSet { save(oldValue != marqueeIntensity) } }
+    // 流水缺口压暗的深度，1 表示缺口中心全黑（和 Claude Code 一致）
+    @Published var streamDepth: Double = 1.0 { didSet { save(oldValue != streamDepth) } }
     @Published var direction: FlowDirection = .clockwise { didSet { save(oldValue != direction) } }
     @Published var displayMode: DisplayMode = .all { didSet { save(oldValue != displayMode) } }
     @Published var level: StripLevel = .aboveAll { didSet { save(oldValue != level) } }
@@ -139,7 +159,9 @@ final class Preferences: ObservableObject {
         cornerRadius = double("cornerRadius", default: 28)
         glow = double("glow", default: 1.4)
         speed = double("speed", default: 1.0)
+        marqueeStyle = MarqueeStyle(rawValue: defaults.string(forKey: "marqueeStyle") ?? "") ?? .sweep
         marqueeIntensity = double("marqueeIntensity", default: 0.25)
+        streamDepth = double("streamDepth", default: 1.0)
         direction = FlowDirection(rawValue: defaults.string(forKey: "direction") ?? "") ?? .clockwise
         displayMode = DisplayMode(rawValue: defaults.string(forKey: "displayMode") ?? "") ?? .all
         level = StripLevel(rawValue: defaults.string(forKey: "level") ?? "") ?? .aboveAll
@@ -162,7 +184,9 @@ final class Preferences: ObservableObject {
         defaults.set(cornerRadius, forKey: "cornerRadius")
         defaults.set(glow, forKey: "glow")
         defaults.set(speed, forKey: "speed")
+        defaults.set(marqueeStyle.rawValue, forKey: "marqueeStyle")
         defaults.set(marqueeIntensity, forKey: "marqueeIntensity")
+        defaults.set(streamDepth, forKey: "streamDepth")
         defaults.set(direction.rawValue, forKey: "direction")
         defaults.set(displayMode.rawValue, forKey: "displayMode")
         defaults.set(level.rawValue, forKey: "level")
@@ -192,7 +216,9 @@ final class Preferences: ObservableObject {
         cornerRadius = 28
         glow = 1.4
         speed = 1.0
+        marqueeStyle = .sweep
         marqueeIntensity = 0.25
+        streamDepth = 1.0
         direction = .clockwise
     }
 }

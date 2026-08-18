@@ -57,6 +57,12 @@ NEONNOTIFY_DEBUG=1 /Applications/NeonNotify.app/Contents/MacOS/NeonNotify 2>&1 |
 跟「运行中」的黄灯撞色。角向渐变还得撑到对角线大小的正方形再 `rotationEffect`，
 否则非正方形屏幕转起来四角会露空。
 
+**`.mask()` 里的动画不会跑。** 「流水」的缺口一开始是当遮罩用的：SwiftUI 照常渲染了遮罩的
+内容（缺口该暗的地方确实暗了），但不驱动它里面的 `repeatForever`，缺口定在原地不动 ——
+逐帧截图做互相关，实测转速正好是 0。改成把缺口留在正常视图树里、用 `.destinationOut`
+按 alpha 挖暗就正常了。用 `destinationOut` 同样得先 `.compositingGroup()` 把要挖的两层
+圈起来，否则会一路挖穿到透明的窗口底。
+
 撒花那边：`.confettiCannon` 挂在 `.overlay(alignment: .top)` 里的 1x1 锚点上时，
 一颗粒子都不会画出来；要直接挂在撑满的容器上。
 

@@ -81,7 +81,18 @@ private struct LightingSettingsView: View {
 
             Section("动态") {
                 LabeledSlider(title: "速度", value: $prefs.speed, range: 0.1...4, unit: "×")
-                LabeledSlider(title: "跑马灯强度", value: $prefs.marqueeIntensity, range: 0...1, unit: "")
+                Picker("流动样式", selection: $prefs.marqueeStyle) {
+                    ForEach(MarqueeStyle.allCases) { Text($0.displayName).tag($0) }
+                }
+                switch prefs.marqueeStyle {
+                case .sweep:
+                    LabeledSlider(title: "跑马灯强度", value: $prefs.marqueeIntensity, range: 0...1, unit: "")
+                case .stream:
+                    LabeledSlider(title: "缺口深度", value: $prefs.streamDepth, range: 0...1, unit: "")
+                    Text("复刻 Claude Code 运行时终端顶部那条流水灯：颜色不变，一个渐暗的缺口匀速扫过整圈。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Picker("方向", selection: $prefs.direction) {
                     ForEach(FlowDirection.allCases) { Text($0.displayName).tag($0) }
                 }

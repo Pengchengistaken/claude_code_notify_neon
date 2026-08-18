@@ -43,7 +43,15 @@ struct StripView: View {
 
             lightLayer(appearance: appearance)
                 .mask(borderShape(width: width))
+
+            // 流水的缺口：把灯带连同辉光一起按比例挖暗
+            if prefs.marqueeStyle == .stream {
+                streamNotch()
+            }
         }
+        // 缺口用 destinationOut 挖，必须先把上面两层圈进同一个合成组，
+        // 否则它会一路挖穿到透明的窗口底
+        .compositingGroup()
         .opacity(breathOpacity(appearance: appearance))
         .animation(breathAnimation(appearance: appearance), value: isBreathing)
         .animation(transitionAnimation(to: appearance), value: appearance)
@@ -58,6 +66,8 @@ struct StripView: View {
         // 状态切换会换掉底色视图，持续动画不会自己接上 —— 必须重新点火，
         // 否则灯带切回彩虹后就不转了（颜色定格）。
         .onChange(of: appearance) { _, _ in armAnimations() }
+        // 换流动样式会整个换掉缺口层，同理要重新点火
+        .onChange(of: prefs.marqueeStyle) { _, _ in armAnimations() }
     }
 
     /// 红灯是"该你操作了"的信号，必须立刻到位。
@@ -103,7 +113,8 @@ struct StripView: View {
                 )
             }
 
-            if includeMarquee {
+            // 流水样式靠遮罩压暗做流动，不叠白色高光 —— Claude Code 那条线也没有
+            if includeMarquee, prefs.marqueeStyle == .sweep {
                 marqueeHighlight(appearance: appearance)
                     .blendMode(.plusLighter)
                     .opacity(prefs.marqueeIntensity)
@@ -157,6 +168,67 @@ struct StripView: View {
         // 45°/秒 为基准，换算成转一圈需要的秒数
         let degreesPerSecond = max(1, 45.0 * prefs.speed * appearance.marqueeMultiplier)
         return .linear(duration: 360.0 / degreesPerSecond).repeatForever(autoreverses: false)
+    }
+
+    // MARK: 流水（Claude Code 终端顶部那条线）
+
+    /// 缺口单侧斜坡的长度（pt）
+    private static let streamRampPoints: Double = 680
+    /// 缺口前进速度（pt/秒）
+    private static let streamPointsPerSecond: Double = 1140
+
+    /// Claude Code 正在运行时终端顶部那条绿色流水灯的复刻。
+    ///
+    /// 逐帧采样那条线量出来的形状（Retina 屏采到的像素值已折算成 pt）：
+    ///   · 颜色自始至终不变，只有亮度被整体缩放 —— 每个采样点都是同一个绿 (117,252,76) 的等比暗化
+    ///   · 一个压到全黑的缺口匀速扫过，两侧各接约 680pt 的线性斜坡，其余是满亮的平台
+    ///   · 缺口约 1140pt/秒 前进（1710pt 宽的终端，1.5 秒扫完一屏）
+    ///
+    /// 所以这里不叠白光，而是用 destinationOut 按 alpha 把灯带挖暗：alpha 是等比缩放，
+    /// 色相分毫不动，彩虹也好黄红绿也好都照原样保留。
+    ///
+    /// 缺口层必须留在正常的视图树里，不能拿去当 .mask —— SwiftUI 会照常渲染遮罩的内容，
+    /// 但不驱动它里面的动画，缺口会定在原地不动（实测转速为 0）。
+    private func streamNotch() -> some View {
+        GeometryReader { geo in
+            // 和彩虹圈同理：rotationEffect 转的是整个视图矩形，得先撑到对角线大小的正方形，
+            // 否则转起来四角会露空
+            let side = hypot(geo.size.width, geo.size.height)
+            let perimeter = 2 * (geo.size.width + geo.size.height)
+            AngularGradient(gradient: streamGradient(perimeter: perimeter), center: .center)
+                .frame(width: side, height: side)
+                .rotationEffect(.degrees(isSpinning ? 360 * prefs.direction.sign : 0))
+                .animation(streamAnimation(perimeter: perimeter), value: isSpinning)
+                .position(x: geo.size.width / 2, y: geo.size.height / 2)
+        }
+        .blendMode(.destinationOut)
+    }
+
+    /// 缺口放在 0.5：中心不透明（挖得最狠），两侧线性收到全透明（原样不动）。
+    /// 端点一律用「透明的白」而不是 Color.clear —— clear 是透明的黑，插值会把中间灰掉。
+    private func streamGradient(perimeter: Double) -> Gradient {
+        // 缺口的物理尺寸是固定的，所以屏幕越大，它在整圈里占的比例越小
+        let ramp = min(0.5, Self.streamRampPoints / max(perimeter, 1))
+        return Gradient(stops: [
+            .init(color: .white.opacity(0), location: 0),
+            .init(color: .white.opacity(0), location: 0.5 - ramp),
+            .init(color: .white.opacity(prefs.streamDepth), location: 0.5),
+            .init(color: .white.opacity(0), location: 0.5 + ramp),
+            .init(color: .white.opacity(0), location: 1),
+        ])
+    }
+
+    /// 缺口按固定的线速度走，转一圈要多久由这块屏幕的周长决定。
+    /// 这里刻意不乘状态倍率：流水的节奏就是 Claude Code 的节奏，
+    /// 黄红绿本来已经靠颜色和呼吸区分开了。
+    ///
+    /// 匀速的是角速度，不是沿边走的线速度 —— 角向渐变扫矩形，边中间慢、拐角快。
+    /// 实测在 1710×1107pt 的屏上是 1240～3210px/秒，平均正好落在 2280 上，
+    /// 横穿顶边约 1.5 秒，和终端里那条线对得上。想让线速度也严格匀速，
+    /// 就得按路径长度参数化（`trim`）逐帧重算路径，为这点差别不值得把 CPU 搭进去。
+    private func streamAnimation(perimeter: Double) -> Animation {
+        let pointsPerSecond = max(1, Self.streamPointsPerSecond * prefs.speed)
+        return .linear(duration: perimeter / pointsPerSecond).repeatForever(autoreverses: false)
     }
 
     /// 圆角矩形描边作为遮罩。strokeBorder 是向内描边，灯带不会被屏幕边缘裁掉一半。

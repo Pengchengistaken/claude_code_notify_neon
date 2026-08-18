@@ -100,12 +100,22 @@ NeonNotify.app      aggregates sessions (red > yellow > green > idle) → strip 
 ## Settings
 
 - **General**: launch at login, which displays to use, window level (above or below all windows)
-- **Lighting**: 13 color presets, strip width, screen corner radius, glow, speed, marquee intensity, direction
+- **Lighting**: 13 color presets, strip width, screen corner radius, glow, speed, flow style
+  (marquee, or the Claude Code stream — see below), intensity, direction
 - **Claude Code**: install/remove hooks, confetti, system notifications, red/green sounds, green hold
   duration, yellow timeout
 
 The bottom of the settings panel has a live session list and four preview buttons, so you can see
 each color without running a real Claude turn.
+
+### Flow style: the Claude Code stream
+
+Besides the default marquee (a white highlight chasing around the loop), the strip can run the
+same flowing light Claude Code shows along the top of your terminal while it works. The shape was
+measured off that line frame by frame: the color never changes, only brightness — a gap dimmed all
+the way to black sweeps along, with a ~680pt linear ramp on each side, moving at ~1140pt/s (it
+crosses a screen-width in about 1.5s). Here it circles the whole strip, so your own colors — the
+idle rainbow, or the yellow/red/green traffic light — are kept exactly as they are.
 
 ## Layout
 
